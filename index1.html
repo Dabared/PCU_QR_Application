@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brand QR Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        #qrcode canvas, #qrcode img {
+            margin: 0 auto;
+            border: 8px solid white;
+            border-radius: 4px;
+        }
+        .qr-wrapper {
+            position: relative;
+            display: inline-block;
+            background: white;
+            padding: 10px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        #logo-preview {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 45px;
+            height: 45px;
+            background: white;
+            border-radius: 4px;
+            display: none;
+            padding: 2px;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen py-10 px-4 font-sans">
+    <div class="max-w-3xl mx-auto bg-white shadow-xl rounded-3xl overflow-hidden flex flex-col md:flex-row">
+        
+        <div class="p-8 md:w-1/2 bg-white">
+            <h2 class="text-2xl font-bold mb-6 text-gray-800 border-b pb-2">Control Panel</h2>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase">Target Link (URL)</label>
+                    <input type="text" id="url-input" placeholder="https://example.com" 
+                           class="w-full mt-1 p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase">Footer Label (Small Text)</label>
+                    <input type="text" id="header-input" oninput="updateLabel()" placeholder="e.g. Scan to Visit Us" 
+                           class="w-full mt-1 p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase">Center Logo</label>
+                    <input type="file" id="logo-input" accept="image/*" 
+                           class="w-full mt-1 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                </div>
+
+                <div class="flex gap-2 pt-4">
+                    <button onclick="generateQR()" 
+                            class="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 shadow-lg transition transform active:scale-95">
+                        Generate
+                    </button>
+                    <button onclick="clearFields()" 
+                            class="px-6 bg-gray-200 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-300 transition">
+                        Clear
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-8 md:w-1/2 bg-slate-50 flex flex-col items-center justify-center text-center">
+            <div id="capture-area">
+                <div class="qr-wrapper" id="qr-wrapper">
+                    <div id="qrcode"></div>
+                    <img id="logo-preview" src="" alt="logo">
+                    <p id="display-label" class="mt-2 text-gray-600 font-medium text-sm tracking-wide"></p>
+                </div>
+            </div>
+
+            <div id="download-area" class="mt-6 hidden">
+                <button onclick="downloadQR()" class="flex items-center text-blue-600 font-bold hover:underline">
+                    <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    Save as Image
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateLabel() {
+            const input = document.getElementById('header-input').value;
+            document.getElementById('display-label').innerText = input;
+        }
+
+        function generateQR() {
+            const url = document.getElementById('url-input').value;
+            const qrContainer = document.getElementById('qrcode');
+            const logoInput = document.getElementById('logo-input');
+            const logoPreview = document.getElementById('logo-preview');
+            const downloadArea = document.getElementById('download-area');
+
+            if (!url) {
+                alert("Machan, link එක දාන්න අමතක වුණා!");
+                return;
+            }
+
+            qrContainer.innerHTML = "";
+            new QRCode(qrContainer, {
+                text: url,
+                width: 220,
+                height: 220,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+
+            if (logoInput.files && logoInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    logoPreview.src = e.target.result;
+                    logoPreview.style.display = 'block';
+                }
+                reader.readAsDataURL(logoInput.files[0]);
+            } else {
+                logoPreview.style.display = 'none';
+            }
+
+            downloadArea.classList.remove('hidden');
+        }
+
+        function clearFields() {
+            document.getElementById('url-input').value = "";
+            document.getElementById('header-input').value = "";
+            document.getElementById('logo-input').value = "";
+            document.getElementById('qrcode').innerHTML = "";
+            document.getElementById('display-label').innerText = "";
+            document.getElementById('logo-preview').style.display = 'none';
+            document.getElementById('download-area').classList.add('hidden');
+        }
+
+        function downloadQR() {
+            const qrCanvas = document.querySelector('#qrcode canvas');
+            const logo = document.getElementById('logo-preview');
+            const footerText = document.getElementById('display-label').innerText;
+            
+            const finalCanvas = document.createElement('canvas');
+            const ctx = finalCanvas.getContext('2d');
+
+            // QR එකයි, පහළ text එකයි දෙකටම ඉඩ තියෙන විදියට canvas එක හදනවා
+            finalCanvas.width = qrCanvas.width + 40; 
+            finalCanvas.height = qrCanvas.height + (footerText ? 60 : 40);
+
+            // Background white
+            ctx.fillStyle = "white";
+            ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+
+            // Draw QR
+            ctx.drawImage(qrCanvas, 20, 20);
+
+            // Draw Logo
+            if (logo.style.display !== 'none') {
+                const logoSize = 45;
+                const x = (finalCanvas.width - logoSize) / 2;
+                const y = (qrCanvas.height + 40 - logoSize) / 2;
+                ctx.fillStyle = "white";
+                ctx.fillRect(x - 2, y - 2, logoSize + 4, logoSize + 4);
+                ctx.drawImage(logo, x, y, logoSize, logoSize);
+            }
+
+            // Draw Footer Text
+            if (footerText) {
+                ctx.fillStyle = "#4a5568"; // gray-600
+                ctx.font = "bold 14px sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText(footerText, finalCanvas.width / 2, qrCanvas.height + 45);
+            }
+
+            const link = document.createElement('a');
+            link.download = 'custom-qr.png';
+            link.href = finalCanvas.toDataURL();
+            link.click();
+        }
+    </script>
+</body>
+</html>
